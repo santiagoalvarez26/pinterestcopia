@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { searchImages } from './API/pexels';
 import Sidebar from './Sidebar';
 import SearchBar from './SearchBar';
+import UserIcon from './UserIcon';
+
+
 import './App.css';
 
 function App() {
@@ -114,6 +117,7 @@ function App() {
 
   return (
     <div className="app">
+      <UserIcon />
       <Sidebar />
       <div className="content">
         <SearchBar onSearch={fetchImages} />
