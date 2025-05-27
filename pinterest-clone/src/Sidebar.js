@@ -14,14 +14,18 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+// Menú lateral con rutas excepto "Actualizaciones" que es toggle de panel
 const menuItems = [
   { icon: <Home size={24} />, label: 'Inicio', path: '/' },
   { icon: <Compass size={24} />, label: 'Explorar', path: '/explorar' },
   { icon: <Plus size={24} />, label: 'Crear', path: '/crear' },
-  { icon: <Bell size={24} />, label: 'Actualizaciones' }, // No tiene ruta
+  { icon: <Bell size={24} />, label: 'Actualizaciones' }, // Sin ruta, abre panel
   { icon: <MessageCircle size={24} />, label: 'Mensajes', path: '/mensajes' },
+  
+
 ];
 
+// Notificaciones para el panel "Actualizaciones"
 const notifications = [
   { text: 'Nueva categoría: Naturaleza', icon: <Bell size={36} color="#e63946" /> },
   { text: 'Top imágenes de Arte', icon: <Star size={36} color="#f1faee" /> },
@@ -65,6 +69,7 @@ function Sidebar() {
             {menuItems.map((item, index) => (
               <li key={index} className="sidebar-item">
                 {item.label === 'Actualizaciones' ? (
+                  // Botón para toggle panel Actualizaciones
                   <button
                     onClick={handleToggleUpdates}
                     style={{
@@ -77,11 +82,13 @@ function Sidebar() {
                       alignItems: 'center',
                       width: '100%',
                     }}
+                    aria-label="Mostrar actualizaciones"
                   >
                     {item.icon}
                     <span className="tooltip">{item.label}</span>
                   </button>
                 ) : (
+                  // Link normal con ruta para otras opciones
                   <Link
                     to={item.path}
                     style={{
@@ -100,9 +107,10 @@ function Sidebar() {
             ))}
           </ul>
         </nav>
+
         <div className="bottom sidebar-item">
           <Link
-            to="/mas-opciones"
+            to="/Configuracion.js"
             style={{
               color: 'inherit',
               textDecoration: 'none',
@@ -112,12 +120,12 @@ function Sidebar() {
             }}
           >
             <Settings size={24} />
-            <span className="tooltip">Más opciones</span>
+            <span className="tooltip">Configuración</span>
           </Link>
         </div>
       </div>
 
-      {/* Panel de actualizaciones */}
+      {/* Panel de actualizaciones (overlay) */}
       {showUpdates && (
         <div style={styles.overlay} onClick={() => setShowUpdates(false)}>
           <div style={styles.updatesPanel} onClick={(e) => e.stopPropagation()}>
