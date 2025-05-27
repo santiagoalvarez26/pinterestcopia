@@ -1,0 +1,39 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background-color: #fff;
+}
+
+.app {
+  display: flex;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 80px;
+  background-color: #fff;
+  border-right: 1px solid #ddd;
+  z-index: 100;
+}
+
+.content {
+  margin-left: 80px; /* deja espacio para la sidebar */
+  width: calc(100% - 80px);
+}
+
+.image-grid {
+  columns: 5 200px;
+  column-gap: 16px;
+  padding: 16px;
+}
+
+.image-grid img {
+  width: 100%;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  display: block;
+}
+
