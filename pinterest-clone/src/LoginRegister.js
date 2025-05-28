@@ -5,12 +5,15 @@ import './LoginRegister.css';
 function LoginRegister({ onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
-  // Estado para el modal de mensaje simple
   const [showMessage, setShowMessage] = useState(false);
   const [messageText, setMessageText] = useState('');
+
+  // Nuevo estado para toggle: true = registro, false = login
+  const [isRegister, setIsRegister] = useState(false);
 
   useEffect(() => {
     const loadUserAndProfile = async () => {
@@ -31,24 +34,22 @@ function LoginRegister({ onClose }) {
     loadUserAndProfile();
   }, []);
 
-  // Función para mostrar el modal con mensaje y ocultarlo después de 2.5s
   const showModalMessage = (msg) => {
     setMessageText(msg);
     setShowMessage(true);
-    setTimeout(() => {
-      setShowMessage(false);
-    }, 2500);
+    setTimeout(() => setShowMessage(false), 2500);
   };
 
-  const handleLoginOrRegister = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    if (isRegister) {
+      // Registro
+      if (!username.trim()) {
+        showModalMessage('Debes ingresar un nombre de usuario para registrarte');
+        return;
+      }
 
-    if (loginError) {
       const { data: signupData, error: signupError } = await supabase.auth.signUp({
         email,
         password,
@@ -61,35 +62,55 @@ function LoginRegister({ onClose }) {
 
       const user = signupData.user;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      if (!user) {
+        showModalMessage('Verifica tu correo electrónico para completar el registro.');
+        return;
+      }
 
-      if (!profile) {
-        const { error: insertError } = await supabase.from('profiles').insert({
-          id: user.id,
-          username: email.split('@')[0],
-          avatar_url: '',
-          is_admin: false,
-        });
+      // Crear perfil con username
+      const { error: insertError } = await supabase.from('profiles').insert({
+        id: user.id,
+        username,
+        avatar_url: '',
+        is_admin: false,
+      });
 
-        if (insertError) {
-          showModalMessage('Error al crear perfil: ' + insertError.message);
-          return;
-        }
+      if (insertError) {
+        showModalMessage('Error al crear perfil: ' + insertError.message);
+        return;
       }
 
       localStorage.setItem('user', JSON.stringify(user));
       setLoggedInUser(user);
-      showModalMessage('Registrado y logueado correctamente');
-    } else {
-      localStorage.setItem('user', JSON.stringify(loginData.user));
-      setLoggedInUser(loginData.user);
-      showModalMessage('Inicio de sesión exitoso');
+      showModalMessage('Registrado correctamente. Por favor confirma tu email antes de iniciar sesión.');
+      setIsRegister(false); // Cambiar a login después de registro
+      return;
     }
 
+    // Login
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (loginError) {
+      showModalMessage('Error al iniciar sesión: ' + loginError.message);
+      return;
+    }
+
+    localStorage.setItem('user', JSON.stringify(loginData.user));
+    setLoggedInUser(loginData.user);
+
+    // Cargar perfil asociado
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', loginData.user.id)
+      .single();
+
+    if (profile) setUserProfile(profile);
+
+    showModalMessage('Inicio de sesión exitoso');
     onClose();
   };
 
@@ -103,9 +124,7 @@ function LoginRegister({ onClose }) {
   return (
     <>
       {showMessage && (
-        <div className="simple-message-modal">
-          {messageText}
-        </div>
+        <div className="simple-message-modal">{messageText}</div>
       )}
 
       <div className="login-overlay">
@@ -127,8 +146,9 @@ function LoginRegister({ onClose }) {
             </>
           ) : (
             <>
-              <h2 className="title">🔐 Iniciar sesión / Registrarse</h2>
-              <form onSubmit={handleLoginOrRegister} className="form">
+              <h2 className="title">{isRegister ? '📝 Registrarse' : '🔐 Iniciar sesión'}</h2>
+
+              <form onSubmit={handleSubmit} className="form">
                 <input
                   className="input"
                   type="email"
@@ -145,8 +165,30 @@ function LoginRegister({ onClose }) {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                {isRegister && (
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder="Nombre de usuario"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required={isRegister}
+                  />
+                )}
+                <div className="btn-group" style={{ justifyContent: 'space-between', marginTop: 10 }}>
+                  <button type="submit" className="btn primary">
+                    {isRegister ? 'Registrarse' : 'Entrar'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn toggle"
+                    onClick={() => setIsRegister(!isRegister)}
+                  >
+                    {isRegister ? '¿Ya tienes cuenta? Iniciar sesión' : '¿No tienes cuenta? Registrarse'}
+                  </button>
+                </div>
                 <div className="btn-group">
-                  <button type="submit" className="btn primary">Entrar / Registrarse</button>
                   <button type="button" className="btn secondary" onClick={onClose}>Cerrar</button>
                 </div>
               </form>
