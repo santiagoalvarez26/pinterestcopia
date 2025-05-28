@@ -8,6 +8,10 @@ function LoginRegister({ onClose }) {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
+  // Estado para el modal de mensaje simple
+  const [showMessage, setShowMessage] = useState(false);
+  const [messageText, setMessageText] = useState('');
+
   useEffect(() => {
     const loadUserAndProfile = async () => {
       const storedUser = localStorage.getItem('user');
@@ -24,9 +28,17 @@ function LoginRegister({ onClose }) {
         if (profile) setUserProfile(profile);
       }
     };
-
     loadUserAndProfile();
   }, []);
+
+  // Función para mostrar el modal con mensaje y ocultarlo después de 2.5s
+  const showModalMessage = (msg) => {
+    setMessageText(msg);
+    setShowMessage(true);
+    setTimeout(() => {
+      setShowMessage(false);
+    }, 2500);
+  };
 
   const handleLoginOrRegister = async (e) => {
     e.preventDefault();
@@ -42,11 +54,13 @@ function LoginRegister({ onClose }) {
         password,
       });
 
-      if (signupError) return alert('Error al registrarse: ' + signupError.message);
+      if (signupError) {
+        showModalMessage('Error al registrarse: ' + signupError.message);
+        return;
+      }
 
       const user = signupData.user;
 
-      // Crear perfil si no existe
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -61,16 +75,19 @@ function LoginRegister({ onClose }) {
           is_admin: false,
         });
 
-        if (insertError) return alert('Error al crear perfil: ' + insertError.message);
+        if (insertError) {
+          showModalMessage('Error al crear perfil: ' + insertError.message);
+          return;
+        }
       }
 
       localStorage.setItem('user', JSON.stringify(user));
       setLoggedInUser(user);
-      alert('Registrado y logueado correctamente');
+      showModalMessage('Registrado y logueado correctamente');
     } else {
       localStorage.setItem('user', JSON.stringify(loginData.user));
       setLoggedInUser(loginData.user);
-      alert('Inicio de sesión exitoso');
+      showModalMessage('Inicio de sesión exitoso');
     }
 
     onClose();
@@ -84,44 +101,60 @@ function LoginRegister({ onClose }) {
   };
 
   return (
-    <div className="login-modal-overlay">
-      <div className="login-modal-content">
-        {loggedInUser ? (
-          <>
-            <h2>Bienvenido</h2>
-            <p><strong>Correo:</strong> {loggedInUser.email}</p>
-            <p><strong>Usuario:</strong> {userProfile?.username || loggedInUser.email}</p>
-            {userProfile?.avatar_url && (
-              <img src={userProfile.avatar_url} alt="Avatar" width="80" />
-            )}
-            <button onClick={handleLogout}>Cerrar sesión</button>
-            <button onClick={onClose}>Cerrar</button>
-          </>
-        ) : (
-          <>
-            <h2>Iniciar sesión / Registrarse</h2>
-            <form onSubmit={handleLoginOrRegister}>
-              <input
-                type="email"
-                placeholder="Correo"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <input
-                type="password"
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button type="submit">Entrar / Registrarse</button>
-              <button type="button" onClick={onClose}>Cerrar</button>
-            </form>
-          </>
-        )}
+    <>
+      {showMessage && (
+        <div className="simple-message-modal">
+          {messageText}
+        </div>
+      )}
+
+      <div className="login-overlay">
+        <div className="login-card">
+          {loggedInUser ? (
+            <>
+              <h2 className="title">Bienvenido</h2>
+              <div className="profile-info">
+                <p><strong>📧 Correo:</strong> {loggedInUser.email}</p>
+                <p><strong>👤 Usuario:</strong> {userProfile?.username || loggedInUser.email}</p>
+                {userProfile?.avatar_url && (
+                  <img className="avatar" src={userProfile.avatar_url} alt="Avatar" />
+                )}
+              </div>
+              <div className="btn-group">
+                <button className="btn logout" onClick={handleLogout}>Cerrar sesión</button>
+                <button className="btn secondary" onClick={onClose}>Cerrar</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="title">🔐 Iniciar sesión / Registrarse</h2>
+              <form onSubmit={handleLoginOrRegister} className="form">
+                <input
+                  className="input"
+                  type="email"
+                  placeholder="Correo electrónico"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <input
+                  className="input"
+                  type="password"
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <div className="btn-group">
+                  <button type="submit" className="btn primary">Entrar / Registrarse</button>
+                  <button type="button" className="btn secondary" onClick={onClose}>Cerrar</button>
+                </div>
+              </form>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

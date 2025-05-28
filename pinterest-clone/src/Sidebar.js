@@ -110,7 +110,7 @@ function Sidebar() {
 
         <div className="bottom sidebar-item">
           <Link
-            to="/Configuracion.js"
+            to="/configuracion"
             style={{
               color: 'inherit',
               textDecoration: 'none',
